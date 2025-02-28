@@ -1,92 +1,183 @@
 import { inspect } from 'node:util';
+import fs from 'node:fs';
+import { LOGS_FOLDER } from './Constants';
 
-const color = {
-	red: '\x1b[31m',
-	orange: '\x1b[38;5;202m',
-	yellow: '\x1b[33m',
-	green: '\x1b[32m',
-	blue: '\x1b[34m',
-	pink: '\x1b[35m',
-	purple: '\x1b[38;5;129m',
-	cyan: '\x1b[36m',
-	white: '\x1b[37m',
-	reset: '\x1b[0m'
+export const COLOR = {
+	RED: '\x1b[31m',
+	GREEN: '\x1b[32m',
+	YELLOW: '\x1b[33m',
+	BLUE: '\x1b[34m',
+	MAGENTA: '\x1b[35m',
+	CYAN: '\x1b[36m',
+	WHITE: '\x1b[37m',
+	RESET: '\x1b[0m',
+	BRIGHT: '\x1b[1m',
+	DIM: '\x1b[2m'
 }
 
-function getTimestamp() {
+export const LOG_TYPE = {
+	INFO: 'INFO',
+	WARN: 'WARN',
+	ERROR: 'ERROR',
+	DEBUG: 'DEBUG',
+	TRACE: 'TRACE',
+}
+
+const LOG_COLOR = {
+	[LOG_TYPE.INFO]: COLOR.CYAN,
+	[LOG_TYPE.WARN]: COLOR.YELLOW,
+	[LOG_TYPE.ERROR]: COLOR.RED + COLOR.BRIGHT,
+	[LOG_TYPE.DEBUG]: COLOR.GREEN,
+	[LOG_TYPE.TRACE]: COLOR.BLUE,
+}
+
+// Just so we can make the logs look pretty and aligned
+const LONGEST_LOG_TYPE = Math.max(...Object.keys(LOG_TYPE).map((type) => type.length));
+
+type LogEntry = {
+	type: keyof typeof LOG_TYPE;
+	bot: string;
+	timestamp: Date | string;
+	message: string;
+
+	flushed?: boolean;
+}
+
+let LogBuffer: LogEntry[] = [];
+
+export function GetTimestamp() {
 	const date = new Date();
-	const year = date.getFullYear();
-	const month = date.getMonth() + 1;
-	const day = date.getDate();
-	const hours = date.getHours();
-	const minutes = date.getMinutes();
-	const seconds = date.getSeconds();
+	const year = date.getFullYear().toString().padStart(4, '0');
+	const month = (date.getMonth() + 1).toString().padStart(2, '0');
+	const day = date.getDate().toString().padStart(2, '0');
+	const hours = date.getHours().toString().padStart(2, '0');
+	const minutes = date.getMinutes().toString().padStart(2, '0');
+	const seconds = date.getSeconds().toString().padStart(2, '0');
 	return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-function parse(message: any) {
-	if (typeof message === 'string') return message;
+const BotColors = new Map<string, string>([ ['MANAGER', COLOR.RED] ]); // Name -> Color
+export function ResoloveBotColor(bot: string) {
+	if (BotColors.has(bot)) return BotColors.get(bot);
 
-	const properties = inspect(message, { depth: 3 });
+	const r = Math.floor(Math.random() * 256);
+	const g = Math.floor(Math.random() * 256);
+	const b = Math.floor(Math.random() * 256);
+	const ansii = `\x1b[38;2;${r};${g};${b}m`;
+	BotColors.set(bot, ansii);
 
-	const regex = /^\s*["'`](.*)["'`]\s*\+?$/gm;
+	return ansii;
+}
 
-	const response: string[] = [];
-	for (const line of properties.split('\n')) {
-		response.push( line.replace(regex, '$1') );
+function ResolveBotName(name: string | null) {
+	if (name === null || name === 'MANAGER') return 'MANAGER';
+	return name.toUpperCase();
+}
+
+function Stringify(message: any, colors = true) {
+	return typeof message === 'string' ? message : inspect(message, { depth: 3, colors });
+}
+
+async function FlushLogs(bot: string | null = null) {
+	if (LogBuffer.length === 0) return;
+
+	// if bot is specified, only flush logs for that bot
+	// otherwise flush all logs
+	bot = bot ? ResolveBotName(bot) : null;
+
+	if (bot) {
+		const targetLogs = [];
+		for (let i = 0; i < LogBuffer.length; i++) {
+			const entry = LogBuffer[i];
+			if (bot === null || entry!.bot === bot) {
+				targetLogs.push(entry);
+				LogBuffer[i].flushed = true;
+			}
+		}
+		if (targetLogs.length === 0) return;
+
+		LogBuffer = LogBuffer.filter((entry) => !entry.flushed);
+
+		await LogToFile(LOGS_FOLDER, targetLogs);
+	} else  {
+		const BotLogs: Record<string, LogEntry[]> = {};
+		for (let i = 0; i < LogBuffer.length; i++) {
+			const entry = LogBuffer[i];
+			if (!BotLogs[entry.bot]) {
+				BotLogs[entry.bot] = [entry];
+			} else {
+				BotLogs[entry.bot].push(entry);
+			}
+		}
+
+		LogBuffer = [];
+
+		for (const [ bot, logs ] of Object.entries(BotLogs)) {
+			await LogToFile(bot, logs);
+		}
 	}
 
-	return response.join('\n');
 }
 
-function info(message: any) {
-	console.log(`${color.yellow}[${getTimestamp()}]${color.reset} ${parse(message)}`);
+function GetLogDate() {
+	const now = new Date();
+	const year = now.getFullYear();
+	const month = (now.getMonth() + 1).toString().padStart(2, '0');
+	const day = now.getDate().toString().padStart(2, '0');
+	return `${year}-${month}-${day}`;
 }
 
-function warn(message: any) {
-	console.log(`${color.orange}[${getTimestamp()}]${color.reset} ${parse(message)}`);
-}
+async function LogToFile(bot: string, logs: LogEntry[]) {
+	bot = ResolveBotName(bot);
 
-function error(message: any) {
-	console.log(`${color.red}[${getTimestamp()}] ${parse(message)}${color.reset}`);
-}
+	// logs/<bot>/YYYY-MM-DD.log
+	const currentLogFile = `${LOGS_FOLDER}/${bot}/${GetLogDate()}.log`;
 
-function success(message: any) {
-	console.log(`${color.green}[${getTimestamp()}]${color.reset} ${parse(message)}`);
-}
-
-function debug(message: any) {
-	console.log(`${color.blue}[${getTimestamp()}]${color.reset} ${parse(message)}`);
-}
-
-function deleted(message: any) {
-	console.log(`${color.pink}[${getTimestamp()}]${color.reset} ${parse(message)}`);
-}
-
-function updated(message: any) {
-	console.log(`${color.purple}[${getTimestamp()}]${color.reset} ${parse(message)}`);
-}
-
-function created(message: any) {
-	console.log(`${color.cyan}[${getTimestamp()}]${color.reset} ${parse(message)}`);
-}
-
-function custom(message: any, hexColor: string | number = 0x000000) {
-	switch (typeof hexColor) {
-		case 'string':
-			// conver to int
-			hexColor = parseInt(hexColor.replace('#', ''), 16);
-			break;
-		case 'number':
-			// do nothing
-			break;
-		default:
-			hexColor = 0;
-			break;
+	let LogOutput = '';
+	for (let i = 0; i < logs.length; i++) {
+		const log = logs[i];
+		LogOutput += `[${log.timestamp}] [${log.type.padEnd(LONGEST_LOG_TYPE, ' ')}] ${Stringify(log.message)}\n`;
 	}
-	const rgb = [ (hexColor >> 16) & 0xFF, (hexColor >> 8) & 0xFF, hexColor & 0xFF ];
-	const ansiRGB = `\x1b[38;2;${rgb[0]};${rgb[1]};${rgb[2]}m`;
-	console.log(`${ansiRGB}[${getTimestamp()}]${color.reset} ${parse(message)}`);
+
+	const file = await fs.promises.open(currentLogFile, fs.constants.O_APPEND | fs.constants.O_CREAT | fs.constants.O_WRONLY);
+	await file.appendFile(LogOutput);
+	await file.close();
 }
 
-export default { getTimestamp, info, warn, error, success, debug, deleted, updated, created, custom };
+function StripColors(message: string) {
+	return message.replace(/\x1b\[\d+m/g, '');
+}
+
+export default function Log(type: keyof typeof LOG_TYPE, message: any, name: string | null = null) {
+	const bot = ResolveBotName(name);
+	const timestamp = GetTimestamp();
+	const botColor = ResoloveBotColor(bot);
+	const logColor = LOG_COLOR[type] || COLOR.RESET;
+
+	const shouldReset = type === LOG_TYPE.ERROR && bot !== 'MANAGER';
+	message = Stringify(message, !shouldReset);
+
+	console.log(`${logColor}[${timestamp}] [${type.padEnd(LONGEST_LOG_TYPE, ' ')}] ${botColor}${bot}${shouldReset ? COLOR.RESET : ''} - ${message}`);
+
+	LogBuffer.push({ type, bot, timestamp, message: StripColors(message) });
+}
+
+
+const ScheduledEvents : [Function, number][] = [
+	[FlushLogs, 1000 * 60 * 5] // Flush logs every 5 minutes
+];
+const Intervals : number[] = [];
+
+for (let i = 0; i < ScheduledEvents.length; i++) {
+	const [fn, interval] = ScheduledEvents[i];
+	Intervals.push( setInterval(fn, interval) );
+}
+
+process.on('SIGINT', async () => {
+	for (let i = 0; i < Intervals.length; i++) {
+		clearInterval(Intervals[i]);
+	}
+
+	await FlushLogs();
+	process.exit(0);
+});
