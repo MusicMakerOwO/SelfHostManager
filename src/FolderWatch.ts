@@ -1,5 +1,5 @@
 import fs from 'fs';
-import Logs from './Logs';
+import Log from './Logs';
 
 enum ItemType {
 	FILE = 0,
@@ -50,8 +50,8 @@ export default class FolderWatch {
 			if (stats.isDirectory()) return ItemType.DIRECTORY;
 			if (stats.isSymbolicLink()) return ItemType.SYMLINK;
 		} catch (err) {
-			Logs('ERROR', `Could not get item type for file: ${file}`);
-			Logs('ERROR', err);
+			Log('ERROR', `Could not get item type for file: ${file}`);
+			Log('ERROR', err);
 		}
 		return ItemType.UNKNOWN;
 	}
@@ -85,7 +85,7 @@ export default class FolderWatch {
 	public WatcherEvent(path: string, event: 'change' | 'rename', filename: string | null) {
 
 		if (!filename) {
-			Logs('WARN', `Filename is null for path: ${path}`);
+			Log('WARN', `Filename is null for path: ${path}`);
 			return;
 		}
 	

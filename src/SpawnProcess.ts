@@ -1,6 +1,6 @@
 import ChildProcess from "child_process";
 import fs from "fs";
-import Logs from "./Logs";
+import Log from "./Logs";
 
 // /home/musicmaker/Desktop/Dev/SelfHostManager/build/../Bots/test -> /Bots/test
 function CleanPath(path: string) {
@@ -14,11 +14,11 @@ export default function (cache: Map<string, ChildProcess.ChildProcess>, botFolde
 
 	const name = alias || botFolder.split('/').pop() as string;
 
-	Logs('INFO', `Spawning bot at "${CleanPath(botFolder)}"`);
+	Log('INFO', `Spawning bot at "${CleanPath(botFolder)}"`);
 
 	const stats = fs.lstatSync(botFolder);
 	if (!stats.isDirectory()) {
-		Logs('ERROR', `Bot path "${CleanPath(botFolder)}" is not a directory`);
+		Log('ERROR', `Bot path "${CleanPath(botFolder)}" is not a directory`);
 		return;
 	}
 
@@ -31,7 +31,7 @@ export default function (cache: Map<string, ChildProcess.ChildProcess>, botFolde
 	}
 
 	if (!fs.existsSync(entryFile)) {
-		Logs('ERROR', `Could not find entry for bot at "${CleanPath(botFolder)}" - Make sure it has a valid package.json`);
+		Log('ERROR', `Could not find entry for bot at "${CleanPath(botFolder)}" - Make sure it has a valid package.json`);
 		return;
 	}
 
