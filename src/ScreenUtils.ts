@@ -28,6 +28,8 @@ export function CursorToBeginning() {
 }
 
 export function PrintPrompt() {
+	ClearLine();
+	CursorToBeginning();
 	process.stdout.write(PROMPT + inputBuffer);
 }
 
@@ -69,17 +71,13 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 
 	if (key.name === 'return') {
 		if (InputCallback) InputCallback(inputBuffer);
-		ClearLine();
 		ClearBuffer();
-		CursorToBeginning();
 		PrintPrompt();
 		return;
 	}
 
 	if (key.name === 'backspace' || key.name === 'delete') {
 		inputBuffer = inputBuffer.slice(0, -1);
-		ClearLine();
-		CursorToBeginning();
 		PrintPrompt();
 		return;
 	}
@@ -87,7 +85,6 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 	let isPrintable = REGEX_PRINTABLE.test(character || '');
 	if (isPrintable) {
 		AppendBuffer(character as string);
-		CursorToBeginning();
 		PrintPrompt();
 		return;
 	}
