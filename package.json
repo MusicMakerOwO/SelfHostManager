@@ -4,8 +4,9 @@
 	"description": "Local discord bot hosting",
 	"main": "build/index.js",
 	"scripts": {
-		"build": "tsc",
+		"build": "rm -rf ./build && tsc -b",
 		"start": "node build/index.js",
+		"linecount": "find ./src -name '*.ts' | xargs wc -l",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"repository": {
@@ -22,5 +23,9 @@
 	"homepage": "https://github.com/MusicMakerOwO/SelfHostManager#readme",
 	"devDependencies": {
 		"@types/node": "^22.10.5"
+	},
+	"dependencies": {
+		"keypress": "^0.2.1",
+		"source-map-support": "^0.5.21"
 	}
 }
