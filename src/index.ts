@@ -5,7 +5,7 @@ import ChildProcess from 'child_process';
 
 import FolderWatcher from './FolderWatch';
 import SpawnProcess from "./SpawnProcess";
-import Logs from "./Logs";
+import Log, { ShutdownLogs } from "./Logs";
 
 import * as Screen from './ScreenUtils';
 import CommandLoader from "./CommandLoader";
@@ -61,6 +61,8 @@ function SpawnBot (botFolder: string) {
 	BindListeners(bot, name);
 }
 
+let currentlyExiting = false;
+
 function BindListeners(child: ChildProcess.ChildProcess, name: string) {
 	child.on('exit', (code, signal) => {
 		Log('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
@@ -80,11 +82,41 @@ function BindListeners(child: ChildProcess.ChildProcess, name: string) {
 	});
 }
 
-function OnInput (input: string) {
+process.on('SIGINT', OnInput.bind(null, 'exit'));
+
+async function OnInput (input: string) {
 	console.log(); // move down a line lol
 
-	console.log('Input received : ', input);
+	Screen.ClearBuffer();
+
+	if (input === '') return;
+
+	const args = input.split(' ');
+	const name = args.shift() as string;
+
+	if (name === 'exit' || name === 'quit') {
+		if (currentlyExiting) return;
+
+		currentlyExiting = true;
+
+		for (const [botName, bot] of BotProcesses.entries()) {
+			bot.kill('SIGINT');
+			Log('INFO', `Bot "${botName}" has been killed`);
+		}
+		
+		ShutdownLogs();
+
+		process.exit(0);
+	}
+
+	const command = Commands.get(name);
+	if (!command) {
+		Log('ERROR', `Unknown command "${name}"`);
+		return;
+	}
+
 	Screen.PrintPrompt();
 }
 
 Screen.OnInput( OnInput );
+Screen.PrintPrompt();
