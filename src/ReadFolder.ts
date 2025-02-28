@@ -1,13 +1,13 @@
 import fs from 'fs';
-import Logs from './Logs';
+import Log from './Logs';
 
 const files: string[] = [];
 
-export default function (folder: string): string[] { // Array of file paths
+export default function (folder: string, depth = 3): string[] { // Array of file paths
 	if (!folder.startsWith('/')) throw new Error('Folder must be an absolute path');
 
 	files.length = 0;
-	ReadFolder(folder);
+	ReadFolder(folder, depth);
 
 	return files;
 }
@@ -15,7 +15,7 @@ export default function (folder: string): string[] { // Array of file paths
 function ReadFolder (folder: string, depth = 3) {
 
 	if (depth < 0) {
-		Logs.warn(`ReadFolder: Maximum depth reached at ${folder}`);
+		Log('WARN', `ReadFolder: Maximum depth reached at ${folder}`);
 		return;
 	}
 
@@ -30,15 +30,27 @@ function ReadFolder (folder: string, depth = 3) {
 
 		if (item.isFile()) {
 			files.push(`${folder}/${item.name}`);
+			continue;
 		}
 
 		if (item.isSymbolicLink()) {
 			const link = fs.readlinkSync(`${folder}/${item.name}`);
 			ReadFolder(link, depth - 1);
+			continue;
 		}
 
-		if (item.isBlockDevice() || item.isCharacterDevice() || item.isFIFO() || item.isSocket()) {
-			console.warn(`ReadFolder: Unsupported file type at ${folder}/${item.name}`);
-		}
+		const type = GetType(item);
+		Log('WARN', `ReadFolder: Unsupported file type at ${folder}/${item.name} (${type})`);
 	}
+}
+
+function GetType(entry: fs.Dirent) {
+	if (entry.isFile()) return 'File';
+	if (entry.isDirectory()) return 'Directory';
+	if (entry.isSymbolicLink()) return 'Symbolic Link';
+	if (entry.isBlockDevice()) return 'Block Device';
+	if (entry.isCharacterDevice()) return 'Charcter Device';
+	if (entry.isFIFO()) return 'FIFO';
+	if (entry.isSocket()) return 'Socket';
+	return 'Unknown';
 }
