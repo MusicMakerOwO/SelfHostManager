@@ -140,19 +140,28 @@ function StripColors(message: string) {
 	return message.replace(/\x1b\[\d+m/g, '');
 }
 
+export function CleanMessage(message: string) {
+	message = message.trim();
+	message = message.replace(/^\n+/, '');
+	message = message.replace(/\n+$/, '');
+	return message;
+}
+
 export default function Log(type: keyof typeof LOG_TYPE, message: any, name: string | null = null) {
+	message = CleanMessage(message);
+
 	const bot = ResolveBotName(name);
 	const timestamp = GetTimestamp();
 	const botColor = ResoloveBotColor(bot);
 	const logColor = LOG_COLOR[type] || COLOR.RESET;
 
-	const shouldReset = type !== LOG_TYPE.ERROR && bot === 'MANAGER';
+	const shouldReset = type === LOG_TYPE.ERROR;
 	message = Stringify(message, !shouldReset);
 
 	Screen.ClearLine();
 	Screen.CursorToBeginning();
 
-	console.log(`${logColor}${type.padEnd(LONGEST_LOG_TYPE, ' ')} ${timestamp} ${COLOR.RESET}[${botColor}${bot}${COLOR.RESET}] ${!shouldReset ? logColor : ''}${message}${COLOR.RESET}`);
+	console.log(`${logColor}${type.padEnd(LONGEST_LOG_TYPE, ' ')} ${COLOR.RESET}|${logColor} ${timestamp} ${COLOR.RESET}[${botColor}${bot}${COLOR.RESET}] ${shouldReset ? logColor : ''}${message}${COLOR.RESET}`);
 
 	Screen.PrintPrompt();
 
