@@ -1,19 +1,7 @@
 import { inspect } from 'node:util';
 import fs from 'node:fs';
-import { LOGS_FOLDER } from './Constants';
-
-export const COLOR = {
-	RED: '\x1b[31m',
-	GREEN: '\x1b[32m',
-	YELLOW: '\x1b[33m',
-	BLUE: '\x1b[34m',
-	MAGENTA: '\x1b[35m',
-	CYAN: '\x1b[36m',
-	WHITE: '\x1b[37m',
-	RESET: '\x1b[0m',
-	BRIGHT: '\x1b[1m',
-	DIM: '\x1b[2m'
-}
+import { COLOR, LOGS_FOLDER } from './Constants';
+import * as Screen from './ScreenUtils';
 
 export const LOG_TYPE = {
 	INFO: 'INFO',
@@ -139,6 +127,10 @@ async function LogToFile(bot: string, logs: LogEntry[]) {
 		LogOutput += `[${log.timestamp}] [${log.type.padEnd(LONGEST_LOG_TYPE, ' ')}] ${Stringify(log.message)}\n`;
 	}
 
+	if (!fs.existsSync(`${LOGS_FOLDER}/${bot}`)) {
+		await fs.promises.mkdir(`${LOGS_FOLDER}/${bot}`, { recursive: true });
+	}
+
 	const file = await fs.promises.open(currentLogFile, fs.constants.O_APPEND | fs.constants.O_CREAT | fs.constants.O_WRONLY);
 	await file.appendFile(LogOutput);
 	await file.close();
@@ -154,10 +146,15 @@ export default function Log(type: keyof typeof LOG_TYPE, message: any, name: str
 	const botColor = ResoloveBotColor(bot);
 	const logColor = LOG_COLOR[type] || COLOR.RESET;
 
-	const shouldReset = type === LOG_TYPE.ERROR && bot !== 'MANAGER';
+	const shouldReset = type !== LOG_TYPE.ERROR && bot === 'MANAGER';
 	message = Stringify(message, !shouldReset);
 
-	console.log(`${logColor}[${timestamp}] [${type.padEnd(LONGEST_LOG_TYPE, ' ')}] ${botColor}${bot}${shouldReset ? COLOR.RESET : ''} - ${message}`);
+	Screen.ClearLine();
+	Screen.CursorToBeginning();
+
+	console.log(`${logColor}${type.padEnd(LONGEST_LOG_TYPE, ' ')} ${timestamp} ${COLOR.RESET}[${botColor}${bot}${COLOR.RESET}] ${!shouldReset ? logColor : ''}${message}${COLOR.RESET}`);
+
+	Screen.PrintPrompt();
 
 	LogBuffer.push({ type, bot, timestamp, message: StripColors(message) });
 }
