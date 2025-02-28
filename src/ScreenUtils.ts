@@ -3,7 +3,7 @@ import { COLOR } from "./Constants";
 const keypress = require('keypress');
 keypress(process.stdin);
 
-const PROMPT = `${COLOR.CYAN}>> ${COLOR.RESET}`;
+export const PROMPT = `${COLOR.CYAN}>> ${COLOR.RESET}`;
 
 let inputBuffer = '';
 
