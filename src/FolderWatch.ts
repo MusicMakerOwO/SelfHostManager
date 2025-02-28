@@ -31,8 +31,6 @@ export default class FolderWatch {
 		this.onChange = null;
 
 		this.addWatcher(folder);
-
-		console.log(this.watchers);
 	}
 
 	public Destroy () {
