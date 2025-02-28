@@ -66,21 +66,6 @@ function BindListeners(child: ChildProcess.ChildProcess, name: string) {
 		}
 	});
 
-	/*
-	on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-	on(event: "disconnect", listener: () => void): this;
-	on(event: "error", listener: (err: Error) => void): this;
-	on(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-	on(event: "message", listener: (message: Serializable, sendHandle: SendHandle) => void): this;
-	on(event: "spawn", listener: () => void): this;
-	*/
-
-	// child.on('disconnect', () => {
-	// 	Logs('WARN', `Bot "${name}" disconnected - Assuming crash`);
-	// 	child.kill();
-	// 	BotProcesses.delete(name);		
-	// });
-
 	child.stderr!.on('data', (msg: Buffer) => {
 		Logs('ERROR', msg.toString(), name);
 	});
