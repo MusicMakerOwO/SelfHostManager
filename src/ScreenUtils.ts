@@ -69,6 +69,18 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 		return;
 	}
 
+	// Crtl + backspace
+	if (key.ctrl && key.sequence === '\x17') {
+		// delete the last word
+		const words = inputBuffer.split(' ');
+		if (words.length >= 1) {
+			words.pop();
+			inputBuffer = words.join(' ');
+		}
+		PrintPrompt();
+		return;
+	}
+
 	if (key.name === 'return') {
 		if (InputCallback) InputCallback(inputBuffer);
 		ClearBuffer();
