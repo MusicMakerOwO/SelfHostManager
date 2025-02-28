@@ -33,7 +33,7 @@ BotWatcher.onRemove = (file) => {
 BotWatcher.onAdd = (file) => {
 	const stats = fs.lstatSync(file);
 	if (!stats.isDirectory()) {
-		Logs('WARN', `Bot "${file}" is not a folder - Ignoring`);
+		Log('WARN', `Bot "${file}" is not a folder - Ignoring`);
 		return;
 	}
 	SpawnBot(file);
@@ -44,11 +44,11 @@ const BotList = fs.readdirSync(`${__dirname}/../Bots`, { withFileTypes: true })
 .map(item => `${__dirname}/../Bots/${item.name}`);
 
 if (BotList.length === 0) {
-	Logs('INFO', 'No bots found - Nothing to do');
+	Log('INFO', 'No bots found - Nothing to do');
 	process.exit(0);
 }
 
-Logs('INFO', `Found ${BotList.length} bots`);
+Log('INFO', `Found ${BotList.length} bots`);
 for (let i = 0; i < BotList.length; i++) {
 	SpawnBot(BotList[i]);
 }
@@ -63,20 +63,20 @@ function SpawnBot (botFolder: string) {
 
 function BindListeners(child: ChildProcess.ChildProcess, name: string) {
 	child.on('exit', (code, signal) => {
-		Logs('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
+		Log('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
 		BotProcesses.delete(name);
-		if (BotProcesses.size === 0) {
-			Logs('WARN', 'All bots have terminated - Natural exit');
+		if (!currentlyExiting && BotProcesses.size === 0) {
+			Log('WARN', 'All bots have terminated - Natural exit');
 			process.exit(0);
 		}
 	});
 
 	child.stderr!.on('data', (msg: Buffer) => {
-		Logs('ERROR', msg.toString(), name);
+		Log('ERROR', msg.toString(), name);
 	});
 
 	child.stdout!.on('data', (msg: Buffer) => {
-		Logs('INFO', msg.toString(), name);
+		Log('INFO', msg.toString(), name);
 	});
 }
 
