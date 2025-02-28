@@ -64,6 +64,19 @@ type Key = {
 const REGEX_PRINTABLE = /^[ -~]$/;
 
 process.stdin.on('keypress', (character: string | undefined, key: Key) => {
+
+	// console.log('ch:', character, 'key:', key);
+
+	if (!key) {
+		key = {
+			name: character as string,
+			ctrl: false,
+			meta: false,
+			shift: false,
+			sequence: character as string
+		}
+	}
+
 	if (key.ctrl && key.name === 'c') {
 		process.emit('SIGINT');
 		return;
