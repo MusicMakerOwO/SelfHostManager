@@ -66,7 +66,7 @@ function Stringify(message: any, colors = true) {
 	return typeof message === 'string' ? message : inspect(message, { depth: 3, colors });
 }
 
-async function FlushLogs(bot: string | null = null) {
+export async function FlushLogs(bot: string | null = null) {
 	if (LogBuffer.length === 0) return;
 
 	// if bot is specified, only flush logs for that bot
@@ -181,11 +181,9 @@ for (let i = 0; i < ScheduledEvents.length; i++) {
 	Intervals.push( setInterval(fn, interval) );
 }
 
-process.on('SIGINT', async () => {
+
+export function ShutdownLogs() {
 	for (let i = 0; i < Intervals.length; i++) {
 		clearInterval(Intervals[i]);
 	}
-
-	await FlushLogs();
-	process.exit(0);
-});
+}
