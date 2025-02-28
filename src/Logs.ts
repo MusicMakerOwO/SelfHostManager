@@ -148,6 +148,8 @@ export function CleanMessage(message: string) {
 }
 
 export default function Log(type: keyof typeof LOG_TYPE, message: any, name: string | null = null) {
+	if (Buffer.isBuffer(message)) message = message.toString();
+
 	message = CleanMessage(message);
 
 	const bot = ResolveBotName(name);
