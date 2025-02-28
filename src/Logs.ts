@@ -155,13 +155,13 @@ export default function Log(type: keyof typeof LOG_TYPE, message: any, name: str
 	const botColor = ResoloveBotColor(bot);
 	const logColor = LOG_COLOR[type] || COLOR.RESET;
 
-	const shouldReset = type === LOG_TYPE.ERROR;
-	message = Stringify(message, !shouldReset);
+	const isError = type !== LOG_TYPE.ERROR;
+	message = Stringify(message, !isError);
 
 	Screen.ClearLine();
 	Screen.CursorToBeginning();
 
-	console.log(`${logColor}${type.padEnd(LONGEST_LOG_TYPE, ' ')} ${COLOR.RESET}|${logColor} ${timestamp} ${COLOR.RESET}[${botColor}${bot}${COLOR.RESET}] ${shouldReset ? logColor : ''}${message}${COLOR.RESET}`);
+	console.log(`${logColor}${type.padEnd(LONGEST_LOG_TYPE, ' ')} ${COLOR.RESET}|${logColor} ${timestamp} ${COLOR.RESET}[${botColor}${bot}${COLOR.RESET}] ${!isError ? logColor : ''}${message}${COLOR.RESET}`);
 
 	Screen.PrintPrompt();
 
