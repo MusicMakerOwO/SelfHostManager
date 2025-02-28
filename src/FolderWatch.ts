@@ -52,8 +52,8 @@ export default class FolderWatch {
 			if (stats.isDirectory()) return ItemType.DIRECTORY;
 			if (stats.isSymbolicLink()) return ItemType.SYMLINK;
 		} catch (err) {
-			Logs.error(`Error getting item type for file: ${file}`);
-			Logs.error(err);
+			Logs('ERROR', `Could not get item type for file: ${file}`);
+			Logs('ERROR', err);
 		}
 		return ItemType.UNKNOWN;
 	}
@@ -87,7 +87,7 @@ export default class FolderWatch {
 	public WatcherEvent(path: string, event: 'change' | 'rename', filename: string | null) {
 
 		if (!filename) {
-			Logs.warn(`Filename is null for path: ${path}`);
+			Logs('WARN', `Filename is null for path: ${path}`);
 			return;
 		}
 	
