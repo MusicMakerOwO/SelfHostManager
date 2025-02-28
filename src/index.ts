@@ -8,11 +8,16 @@ import SpawnProcess from "./SpawnProcess";
 import Logs from "./Logs";
 
 import * as Screen from './ScreenUtils';
+import CommandLoader from "./CommandLoader";
+import { CommandFile } from "./typings";
 
 // dummy server to keep the process running lol
 require('node:https').createServer().listen();
 
 const BotProcesses = new Map<string, ChildProcess.ChildProcess>();
+const Commands = new Map<string, CommandFile>();
+
+CommandLoader(Commands, `${__dirname}/Commands`);
 
 const BotWatcher = new FolderWatcher(`${__dirname}/../Bots`, false); // Add/Remove bots on the fly
 
