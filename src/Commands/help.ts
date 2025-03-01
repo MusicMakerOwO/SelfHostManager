@@ -1,4 +1,5 @@
 import { CommandFile } from "../typings";
+import { COLOR } from "../Constants";
 
 export default {
 	name: 'help',
@@ -26,6 +27,8 @@ export default {
 		for (const command of commands.values()) {
 			output += `${command.name.padEnd(longestCommandName)} - ${command.description}\n`;
 		}
+
+		output += COLOR.MAGENTA + "== Use 'help [command]' to get more information about a command ==";
 
 		console.log(output);
 	}
