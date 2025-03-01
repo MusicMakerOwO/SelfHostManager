@@ -7,7 +7,7 @@ export default function CommandLoader(cache: Map<string, CommandFile>, folder: s
 		const file = files[i];
 		if (!file.endsWith('.js')) continue;
 		
-		let command = require(`${folder}/${file}`) as CommandFile | { default: CommandFile };
+		let command = require(file) as CommandFile | { default: CommandFile };
 		if ('default' in command) command = command.default;
 
 		try {
