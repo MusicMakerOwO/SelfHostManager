@@ -101,7 +101,7 @@ async function OnInput (input: string) {
 	if (input === '') return;
 
 	const args = input.split(' ');
-	const name = args.shift() as string;
+	const name = args.shift()!.toLowerCase();
 
 	if (name === 'exit' || name === 'quit') {
 		if (currentlyExiting) return;

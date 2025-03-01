@@ -18,7 +18,7 @@ export default function CommandLoader(cache: Map<string, CommandFile>, folder: s
 			if (typeof command.usage !== 'string') throw 'Command usage must be a string - Got ' + typeof command.usage;
 			if (typeof command.execute !== 'function') throw 'Command execute must be a function - Got ' + typeof command.execute;
 
-			cache.set(command.name, command);
+			cache.set(command.name.toLowerCase(), command);
 		} catch (err) {
 			console.error(`Error loading command ${file}: ${err}`);
 		}
