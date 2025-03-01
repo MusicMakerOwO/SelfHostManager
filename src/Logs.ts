@@ -112,7 +112,7 @@ export async function FlushLogs(bot: string | null = null) {
 
 	const end = process.hrtime.bigint();
 	const elapsed = Number(end - start) / 1e6;
-	Log('INFO', `Flushed ${logCount} logs in ${elapsed.toFixed(2)}ms`, bot);
+	Log('INFO', `Flushed ${logCount} logs in ${elapsed.toFixed(2)}ms`);
 
 }
 
