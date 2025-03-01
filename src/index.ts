@@ -67,7 +67,6 @@ function BindListeners(child: BotProcess, name: string) {
 	child.on('exit', (code, signal) => {
 		Log('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
 		BotProcesses.set(name, null);
-		BotProcesses.delete(name);
 		if (!currentlyExiting && BotProcesses.size === 0) {
 			Log('WARN', 'All bots have terminated - Natural exit');
 			process.exit(0);
