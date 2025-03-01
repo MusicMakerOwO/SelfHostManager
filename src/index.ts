@@ -1,7 +1,6 @@
 import "source-map-support/register";
 
 import fs from 'fs';
-import ChildProcess from 'child_process';
 
 import FolderWatcher from './FolderWatch';
 import SpawnProcess from "./SpawnProcess";
@@ -9,13 +8,13 @@ import Log, { FlushLogs, ShutdownLogs } from "./Logs";
 
 import * as Screen from './ScreenUtils';
 import CommandLoader from "./CommandLoader";
-import { CommandFile } from "./typings";
+import { BotProcess, CommandFile } from "./typings";
 import RunNamedParams from "./RunNamedParams";
 
 // dummy server to keep the process running lol
 require('node:https').createServer().listen();
 
-const BotProcesses = new Map<string, ChildProcess.ChildProcess>();
+const BotProcesses = new Map<string, BotProcess | null>();
 const Commands = new Map<string, CommandFile>();
 
 CommandLoader(Commands, `${__dirname}/Commands`);
@@ -64,14 +63,20 @@ function SpawnBot (botFolder: string) {
 
 let currentlyExiting = false;
 
-function BindListeners(child: ChildProcess.ChildProcess, name: string) {
+function BindListeners(child: BotProcess, name: string) {
 	child.on('exit', (code, signal) => {
 		Log('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
+		BotProcesses.set(name, null);
 		BotProcesses.delete(name);
 		if (!currentlyExiting && BotProcesses.size === 0) {
 			Log('WARN', 'All bots have terminated - Natural exit');
 			process.exit(0);
 		}
+	});
+
+	child.on('spawn', () => {
+		child.startedAt = Date.now() - 6000;
+		Log('INFO', `Bot "${name}" has started`);
 	});
 
 	child.stderr!.on('data', (msg: Buffer) => {
@@ -104,8 +109,9 @@ async function OnInput (input: string) {
 		currentlyExiting = true;
 
 		// Stop all bot proesses
-		for (const [botName, bot] of BotProcesses.entries()) {
-			bot.kill('SIGINT');
+		for (const [botName, child] of BotProcesses.entries()) {
+			if (!child) continue;
+			child.kill('SIGINT');
 			Log('INFO', `Bot "${botName}" has been killed`);
 		}
 		

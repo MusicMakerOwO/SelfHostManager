@@ -1,6 +1,7 @@
 import ChildProcess from "child_process";
 import fs from "fs";
 import Log from "./Logs";
+import { BotProcess } from "./typings";
 
 // /home/musicmaker/Desktop/Dev/SelfHostManager/build/../Bots/test -> /Bots/test
 function CleanPath(path: string) {
@@ -10,7 +11,7 @@ function CleanPath(path: string) {
 	return './' + parts.slice(index).join('/');
 }
 
-export default function (cache: Map<string, ChildProcess.ChildProcess>, botFolder: string, alias?: string) {
+export default function (cache: Map<string, any>, botFolder: string, alias?: string) {
 
 	const name = alias || botFolder.split('/').pop() as string;
 
@@ -38,9 +39,9 @@ export default function (cache: Map<string, ChildProcess.ChildProcess>, botFolde
 	const bot = ChildProcess.fork(entryFile, [], {
 		cwd: botFolder,
 		stdio: 'pipe'
-	});
+	}) as BotProcess;
 
-	cache.set(name, bot);
+	cache.set(name.toLowerCase(), bot);
 
 	return bot;
 }
