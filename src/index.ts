@@ -128,11 +128,6 @@ async function OnInput (input: string) {
 		return;
 	}
 
-	if (args.length < command.usage.split(' ').length - 1) {
-		Log('ERROR', `Usage: ${command.usage}`);
-		return;
-	}
-
 	const namedArgs = { ...COMMAND_NAMED_ARGS, args };
 
 	RunNamedParams(command.execute, namedArgs);
