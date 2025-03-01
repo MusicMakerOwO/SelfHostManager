@@ -10,6 +10,7 @@ import * as Screen from './ScreenUtils';
 import CommandLoader from "./CommandLoader";
 import { BotProcess, CommandFile } from "./typings";
 import RunNamedParams from "./RunNamedParams";
+import ReadFolder from "./ReadFolder";
 
 // dummy server to keep the process running lol
 require('node:https').createServer().listen();
@@ -119,6 +120,17 @@ async function OnInput (input: string) {
 		await FlushLogs();
 
 		process.exit(0);
+	}
+
+	if (name === 'reload') {
+		Commands.clear();
+		const commandFiles = ReadFolder(`${__dirname}/Commands`);
+		for (let i = 0; i < commandFiles.length; i++) {
+			delete require.cache[ commandFiles[i] ];
+		}
+		CommandLoader(Commands, `${__dirname}/Commands`);
+		Log('INFO', `Reloaded ${Commands.size} commands`);
+		return;
 	}
 
 	const command = Commands.get(name);
