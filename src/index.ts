@@ -5,11 +5,12 @@ import ChildProcess from 'child_process';
 
 import FolderWatcher from './FolderWatch';
 import SpawnProcess from "./SpawnProcess";
-import Log, { ShutdownLogs } from "./Logs";
+import Log, { FlushLogs, ShutdownLogs } from "./Logs";
 
 import * as Screen from './ScreenUtils';
 import CommandLoader from "./CommandLoader";
 import { CommandFile } from "./typings";
+import RunNamedParams from "./RunNamedParams";
 
 // dummy server to keep the process running lol
 require('node:https').createServer().listen();
@@ -82,12 +83,15 @@ function BindListeners(child: ChildProcess.ChildProcess, name: string) {
 	});
 }
 
-process.on('SIGINT', OnInput.bind(null, 'exit'));
+const COMMAND_NAMED_ARGS = {
+	commands: Commands,
+	bots: BotProcesses,
+	botWatcher: BotWatcher
+}
 
+process.on('SIGINT', OnInput.bind(null, 'exit'));
 async function OnInput (input: string) {
 	console.log(); // move down a line lol
-
-	Screen.ClearBuffer();
 
 	if (input === '') return;
 
@@ -99,12 +103,15 @@ async function OnInput (input: string) {
 
 		currentlyExiting = true;
 
+		// Stop all bot proesses
 		for (const [botName, bot] of BotProcesses.entries()) {
 			bot.kill('SIGINT');
 			Log('INFO', `Bot "${botName}" has been killed`);
 		}
 		
+		// Wait for logs to flush to disk
 		ShutdownLogs();
+		await FlushLogs();
 
 		process.exit(0);
 	}
@@ -114,6 +121,15 @@ async function OnInput (input: string) {
 		Log('ERROR', `Unknown command "${name}"`);
 		return;
 	}
+
+	if (args.length < command.usage.split(' ').length - 1) {
+		Log('ERROR', `Usage: ${command.usage}`);
+		return;
+	}
+
+	const namedArgs = { ...COMMAND_NAMED_ARGS, args };
+
+	RunNamedParams(command.execute, namedArgs);
 
 	Screen.PrintPrompt();
 }
