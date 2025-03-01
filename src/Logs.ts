@@ -73,6 +73,10 @@ export async function FlushLogs(bot: string | null = null) {
 	// otherwise flush all logs
 	bot = bot ? ResolveBotName(bot) : null;
 
+	const start = process.hrtime.bigint();
+
+	let logCount = 0;
+
 	if (bot) {
 		const targetLogs = [];
 		for (let i = 0; i < LogBuffer.length; i++) {
@@ -82,11 +86,11 @@ export async function FlushLogs(bot: string | null = null) {
 				LogBuffer[i].flushed = true;
 			}
 		}
-		if (targetLogs.length === 0) return;
-
-		LogBuffer = LogBuffer.filter((entry) => !entry.flushed);
-
-		await LogToFile(LOGS_FOLDER, targetLogs);
+		if (targetLogs.length > 0) {
+			logCount = targetLogs.length;
+			LogBuffer = LogBuffer.filter((entry) => !entry.flushed);
+			await LogToFile(LOGS_FOLDER, targetLogs);
+		}
 	} else  {
 		const BotLogs: Record<string, LogEntry[]> = {};
 		for (let i = 0; i < LogBuffer.length; i++) {
@@ -101,9 +105,14 @@ export async function FlushLogs(bot: string | null = null) {
 		LogBuffer = [];
 
 		for (const [ bot, logs ] of Object.entries(BotLogs)) {
+			logCount += logs.length;
 			await LogToFile(bot, logs);
 		}
 	}
+
+	const end = process.hrtime.bigint();
+	const elapsed = Number(end - start) / 1e6;
+	Log('INFO', `Flushed ${logCount} logs in ${elapsed.toFixed(2)}ms`, bot);
 
 }
 
