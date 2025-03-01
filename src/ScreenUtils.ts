@@ -5,6 +5,8 @@ keypress(process.stdin);
 
 export const PROMPT = `${COLOR.CYAN}>> ${COLOR.RESET}`;
 
+const inputHistory: string[] = [];
+
 let inputBuffer = '';
 
 export function Clear() {
@@ -63,6 +65,8 @@ type Key = {
 
 const REGEX_PRINTABLE = /^[ -~]$/;
 
+let currentHistoryIndex = -1;
+
 process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 
 	// console.log('ch:', character, 'key:', key);
@@ -82,6 +86,40 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 		return;
 	}
 
+	if (key.name === 'up') {
+		if (inputHistory.length === 0) return;
+		
+		if (currentHistoryIndex === -1) {
+			currentHistoryIndex = inputHistory.length - 1;
+		} else {
+			currentHistoryIndex = Math.max(0, currentHistoryIndex - 1);
+		}
+
+		inputBuffer = inputHistory[currentHistoryIndex];
+		PrintPrompt();
+
+		return;
+	}
+
+	if (key.name === 'down') {
+		if (inputHistory.length === 0) return;
+		if (currentHistoryIndex === -1) return;
+
+		if (currentHistoryIndex === inputHistory.length - 1) {
+			inputBuffer = '';
+			currentHistoryIndex = -1;
+			PrintPrompt();
+			return;
+		}
+
+		currentHistoryIndex = Math.min(inputHistory.length - 1, currentHistoryIndex + 1);
+
+		inputBuffer = inputHistory[currentHistoryIndex];
+		PrintPrompt();
+
+		return;
+	}
+
 	// Crtl + backspace
 	if (key.ctrl && key.sequence === '\x17') {
 		// delete the last word
@@ -95,7 +133,20 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 	}
 
 	if (key.name === 'return') {
+		
+		if (inputBuffer.length === 0) {
+			console.log();
+			PrintPrompt();
+			return;
+		}
+		
+		if (inputHistory.length > 50) inputHistory.shift();
+		if (inputHistory[ inputHistory.length - 1] !== inputBuffer) inputHistory.push(inputBuffer);
+		
+		currentHistoryIndex = -1;
+
 		if (InputCallback) InputCallback(inputBuffer);
+
 		ClearBuffer();
 		PrintPrompt();
 		return;
@@ -103,6 +154,7 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 
 	if (key.name === 'backspace' || key.name === 'delete') {
 		inputBuffer = inputBuffer.slice(0, -1);
+		currentHistoryIndex = -1;
 		PrintPrompt();
 		return;
 	}
@@ -110,6 +162,7 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 	let isPrintable = REGEX_PRINTABLE.test(character || '');
 	if (isPrintable) {
 		AppendBuffer(character as string);
+		currentHistoryIndex = -1;
 		PrintPrompt();
 		return;
 	}
