@@ -86,6 +86,19 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 		return;
 	}
 
+	if (key.ctrl && key.name === 'l') {
+		Clear();
+		PrintPrompt();
+		return;
+	}
+
+	if (key.ctrl && key.name === 'u') {
+		ClearLine();
+		inputBuffer = '';
+		PrintPrompt();
+		return;
+	}
+
 	if (key.name === 'up') {
 		if (inputHistory.length === 0) return;
 		
