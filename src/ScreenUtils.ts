@@ -1,4 +1,5 @@
 import { COLOR } from "./Constants";
+import { FlushLogs } from "./Logs";
 
 const keypress = require('keypress');
 keypress(process.stdin);
@@ -81,21 +82,34 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 		}
 	}
 
-	if (key.ctrl && key.name === 'c') {
-		process.emit('SIGINT');
-		return;
-	}
-
-	if (key.ctrl && key.name === 'l') {
-		Clear();
-		PrintPrompt();
-		return;
-	}
-
-	if (key.ctrl && key.name === 'u') {
-		ClearLine();
-		inputBuffer = '';
-		PrintPrompt();
+	if (key.ctrl) {
+		switch (key.name) {
+			case 'c':
+				process.emit('SIGINT');
+				return;
+			case 'l':
+				// list command
+				process.stdout.write('list'); // just makes it look like it was typed in lol
+				InputCallback?.('list');
+				break;
+			case 'u':
+				ClearLine();
+				inputBuffer = '';
+				PrintPrompt();
+				break;
+			case 's':
+				console.log('flush'); // just makes it look like it was typed in lol
+				FlushLogs();
+				break;
+			case 'backspace':
+				// delete the last word in the buffer
+				const words = inputBuffer.split(' ');
+				words.pop();
+				inputBuffer = words.join(' ');
+				PrintPrompt();
+				break
+			default: break;
+		}
 		return;
 	}
 
@@ -130,18 +144,6 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 		inputBuffer = inputHistory[currentHistoryIndex];
 		PrintPrompt();
 
-		return;
-	}
-
-	// Crtl + backspace
-	if (key.ctrl && key.sequence === '\x17') {
-		// delete the last word
-		const words = inputBuffer.split(' ');
-		if (words.length >= 1) {
-			words.pop();
-			inputBuffer = words.join(' ');
-		}
-		PrintPrompt();
 		return;
 	}
 
