@@ -28,6 +28,8 @@ export default function (cache: Map<string, any>, botFolder: string, alias?: str
 		return;
 	}
 
+	cache.set(name.toLowerCase(), null); // just ensure it's in the cache to begin with
+
 	let entryFile: string;
 	if (!fs.existsSync(`${botFolder}/package.json`)) {
 		entryFile = `${botFolder}/index.js`;
