@@ -3,7 +3,7 @@ import "source-map-support/register";
 import fs from 'fs';
 
 import FolderWatcher from './FolderWatch';
-import SpawnProcess from "./SpawnProcess";
+import SpawnProcess, { BindListeners } from "./SpawnProcess";
 import Log, { FlushLogs, ShutdownLogs } from "./Logs";
 
 import * as Screen from './ScreenUtils';
@@ -59,7 +59,28 @@ function SpawnBot (botFolder: string) {
 	const bot = SpawnProcess(BotProcesses, botFolder, name);
 	if (!bot) return;
 
-	BindListeners(bot, name);
+	BindListeners(BotProcesses, bot, name);
+}
+
+let naturalExitInterval = setInterval(CheckNaturalExit, 5000);
+function CheckNaturalExit() {
+	if (currentlyExiting) {
+		clearInterval(naturalExitInterval);
+		return;
+	}
+
+	let allOffline = true;
+	for (const bot of BotProcesses.values()) {
+		if (bot) {
+			allOffline = false;
+			break;
+		}
+	}
+
+	if (allOffline) {
+		Log('WARN', 'All bots have terminated - Natural exit');
+		process.exit(0);
+	}
 }
 
 let currentlyExiting = false;
