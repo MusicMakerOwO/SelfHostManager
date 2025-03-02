@@ -7,6 +7,14 @@ export type CommandFile = {
 	execute: Function;
 };
 
+export type KeybindFile = {
+	ctrl: boolean;
+	shift: boolean;
+	alt: boolean;
+	key: string;
+	execute: Function;
+};
+
 export type BotProcess = ChildProcess & {
 	startedAt: number;
 };
