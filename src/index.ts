@@ -8,17 +8,20 @@ import Log, { FlushLogs, ShutdownLogs } from "./Logs";
 
 import * as Screen from './ScreenUtils';
 import CommandLoader from "./CommandLoader";
-import { BotProcess, CommandFile } from "./typings";
+import { BotProcess, CommandFile, KeybindFile } from "./typings";
 import RunNamedParams from "./RunNamedParams";
 import ReadFolder from "./ReadFolder";
+import KeybindLoader, { ResolveKeybindName } from "./KeybindLoader";
 
 // dummy server to keep the process running lol
 require('node:https').createServer().listen();
 
 const BotProcesses = new Map<string, BotProcess | null>();
 const Commands = new Map<string, CommandFile>();
+const Keybinds = new Map<string, KeybindFile>();
 
 CommandLoader(Commands, `${__dirname}/Commands`);
+KeybindLoader(Keybinds, `${__dirname}/Keybinds`);
 
 const BotWatcher = new FolderWatcher(`${__dirname}/../Bots`, false); // Add/Remove bots on the fly
 
@@ -85,10 +88,13 @@ function CheckNaturalExit() {
 
 let currentlyExiting = false;
 
-const COMMAND_NAMED_ARGS = {
+const FUNCTION_NAMED_ARGS = {
 	commands: Commands,
 	bots: BotProcesses,
-	botWatcher: BotWatcher
+	botWatcher: BotWatcher,
+	keybinds: Keybinds,
+	OnInput,
+	OnKeybind
 }
 
 process.on('SIGINT', OnInput.bind(null, 'exit'));
@@ -122,11 +128,18 @@ async function OnInput (input: string) {
 	if (name === 'reload') {
 		Commands.clear();
 		const commandFiles = ReadFolder(`${__dirname}/Commands`);
-		for (let i = 0; i < commandFiles.length; i++) {
+		for (let i = 0; i < commandFiles.length; i++)
 			delete require.cache[ commandFiles[i] ];
-		}
 		CommandLoader(Commands, `${__dirname}/Commands`);
 		Log('INFO', `Reloaded ${Commands.size} commands`);
+		
+		Keybinds.clear();
+		const keybindFiles = ReadFolder(`${__dirname}/Keybinds`);
+		for (let i = 0; i < keybindFiles.length; i++)
+			delete require.cache[ keybindFiles[i] ];
+		KeybindLoader(Keybinds, `${__dirname}/Keybinds`);
+		Log('INFO', `Reloaded ${Keybinds.size} keybinds`);
+
 		return;
 	}
 
@@ -136,12 +149,22 @@ async function OnInput (input: string) {
 		return;
 	}
 
-	const namedArgs = { ...COMMAND_NAMED_ARGS, args };
+	const namedArgs = { ...FUNCTION_NAMED_ARGS, args };
 
 	RunNamedParams(command.execute, namedArgs);
 
 	Screen.PrintPrompt();
 }
 
+function OnKeybind (key: Screen.Key) {
+	const name = ResolveKeybindName(key);
+
+	const keybind = Keybinds.get(name);
+	if (!keybind) return;
+
+	RunNamedParams(keybind.execute, FUNCTION_NAMED_ARGS);
+}
+
 Screen.OnInput( OnInput );
+Screen.OnKeybind( OnKeybind );
 Screen.PrintPrompt();

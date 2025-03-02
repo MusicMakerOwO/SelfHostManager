@@ -1,5 +1,4 @@
 import { COLOR } from "./Constants";
-import { FlushLogs } from "./Logs";
 
 const keypress = require('keypress');
 keypress(process.stdin);
@@ -48,20 +47,29 @@ export function ClearBuffer() {
 	inputBuffer = '';
 }
 
+export function SetBuffer(str: string) {
+	inputBuffer = str;
+}
+
 let InputCallback : ((input: string) => void) | null = null;
-export function OnInput(fn: (input: string) => void) {
+export function OnInput(fn: typeof InputCallback) {
 	InputCallback = fn;
+}
+
+let KeybindCallback : ((key: Key) => void) | null = null;
+export function OnKeybind(fn: typeof KeybindCallback) {
+	KeybindCallback = fn;
 }
 
 process.stdin.setRawMode(true);
 process.stdin.resume();
 
-type Key = {
+export type Key = {
 	name: string;
 	ctrl: boolean;
 	meta: boolean;
 	shift: boolean;
-	sequence: string;
+	sequence?: string;
 };
 
 const REGEX_PRINTABLE = /^[ -~]$/;
@@ -82,36 +90,12 @@ process.stdin.on('keypress', (character: string | undefined, key: Key) => {
 		}
 	}
 
-	if (key.ctrl) {
-		switch (key.name) {
-			case 'c':
-				process.emit('SIGINT');
-				return;
-			case 'l':
-				// list command
-				process.stdout.write('list'); // just makes it look like it was typed in lol
-				InputCallback?.('list');
-				break;
-			case 'u':
-				ClearLine();
-				inputBuffer = '';
-				PrintPrompt();
-				break;
-			case 's':
-				console.log('flush'); // just makes it look like it was typed in lol
-				FlushLogs();
-				break;
-			case 'backspace':
-				// delete the last word in the buffer
-				const words = inputBuffer.split(' ');
-				words.pop();
-				inputBuffer = words.join(' ');
-				PrintPrompt();
-				break
-			default: break;
-		}
+	if (key.ctrl && key.name === 'c') {
+		process.emit('SIGINT');
 		return;
 	}
+
+	if (key.ctrl && KeybindCallback) KeybindCallback(key);
 
 	if (key.name === 'up') {
 		if (inputHistory.length === 0) return;
