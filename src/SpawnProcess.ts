@@ -33,6 +33,7 @@ export default function (cache: Map<string, any>, botFolder: string, alias?: str
 		entryFile = `${botFolder}/index.js`;
 	} else {
 		const pkg = require(`${botFolder}/package.json`);
+		delete require.cache[ require.resolve(`${botFolder}/package.json`) ];
 		entryFile = `${botFolder}/${pkg.main || 'index.js'}`;
 	}
 
