@@ -64,30 +64,6 @@ function SpawnBot (botFolder: string) {
 
 let currentlyExiting = false;
 
-function BindListeners(child: BotProcess, name: string) {
-	child.on('exit', (code, signal) => {
-		Log('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
-		BotProcesses.set(name, null);
-		if (!currentlyExiting && BotProcesses.size === 0) {
-			Log('WARN', 'All bots have terminated - Natural exit');
-			process.exit(0);
-		}
-	});
-
-	child.on('spawn', () => {
-		child.startedAt = Date.now() - 6000;
-		Log('INFO', `Bot "${name}" has started`);
-	});
-
-	child.stderr!.on('data', (msg: Buffer) => {
-		Log('ERROR', msg.toString(), name);
-	});
-
-	child.stdout!.on('data', (msg: Buffer) => {
-		Log('INFO', msg.toString(), name);
-	});
-}
-
 const COMMAND_NAMED_ARGS = {
 	commands: Commands,
 	bots: BotProcesses,

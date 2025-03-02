@@ -45,3 +45,23 @@ export default function (cache: Map<string, any>, botFolder: string, alias?: str
 
 	return bot;
 }
+
+export function BindListeners(processCache: Map<string, BotProcess | null>, child: BotProcess, name: string) {
+	child.on('exit', (code, signal) => {
+		Log('WARN', `Bot "${name}" exited with code ${code} and signal ${signal}`);
+		processCache.set(name, null);
+	});
+
+	child.on('spawn', () => {
+		child.startedAt = Date.now();
+		Log('INFO', `Bot "${name}" has started`);
+	});
+
+	child.stderr!.on('data', (msg: Buffer) => {
+		Log('ERROR', msg.toString(), name);
+	});
+
+	child.stdout!.on('data', (msg: Buffer) => {
+		Log('INFO', msg.toString(), name);
+	});
+}
