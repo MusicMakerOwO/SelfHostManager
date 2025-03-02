@@ -32,7 +32,7 @@ export default function (cache: Map<string, any>, botFolder: string, alias?: str
 	}
 
 	if (!fs.existsSync(entryFile)) {
-		Log('ERROR', `Could not find entry for bot at "${CleanPath(botFolder)}" - Make sure it has a valid package.json`);
+		Log('ERROR', `Could not find entry for "${CleanPath(botFolder)}" - Make sure it has a valid package.json`);
 		return;
 	}
 
