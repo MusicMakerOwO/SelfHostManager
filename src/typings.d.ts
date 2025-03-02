@@ -12,6 +12,7 @@ export type KeybindFile = {
 	shift: boolean;
 	alt: boolean;
 	key: string;
+	description: string;
 	execute: Function;
 };
 
