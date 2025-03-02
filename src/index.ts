@@ -44,7 +44,7 @@ BotWatcher.onAdd = (file) => {
 }
 
 const BotList = fs.readdirSync(`${__dirname}/../Bots`, { withFileTypes: true })
-.filter(item => item.isDirectory())
+.filter(item => item.isDirectory() || item.isSymbolicLink())
 .map(item => `${__dirname}/../Bots/${item.name}`);
 
 if (BotList.length === 0) {
