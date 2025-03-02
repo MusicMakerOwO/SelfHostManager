@@ -3,8 +3,10 @@ import Log from './Logs';
 
 const files: string[] = [];
 
+const WINDOWS_DRIVE = /^[A-Z]:/i;
+
 export default function (folder: string, depth = 3): string[] { // Array of file paths
-	if (!folder.startsWith('/')) throw new Error('Folder must be an absolute path');
+	if (!folder.startsWith('/') && !WINDOWS_DRIVE.test(folder)) throw new Error('Folder must be an absolute path');
 
 	files.length = 0;
 	ReadFolder(folder, depth);
