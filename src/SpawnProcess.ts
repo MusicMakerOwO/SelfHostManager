@@ -17,7 +17,12 @@ export default function (cache: Map<string, any>, botFolder: string, alias?: str
 
 	Log('INFO', `Spawning bot at "${CleanPath(botFolder)}"`);
 
-	const stats = fs.lstatSync(botFolder);
+	let stats = fs.lstatSync(botFolder);
+	if (stats.isSymbolicLink()) {
+		botFolder = fs.realpathSync(botFolder);
+		stats = fs.lstatSync(botFolder);
+	}
+
 	if (!stats.isDirectory()) {
 		Log('ERROR', `Bot path "${CleanPath(botFolder)}" is not a directory`);
 		return;
